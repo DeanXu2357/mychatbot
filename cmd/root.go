@@ -4,9 +4,13 @@ Copyright © 2023 poyu <dean.xu.2357@gmail.com>
 package cmd
 
 import (
+	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -34,6 +38,8 @@ func Execute() {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
+
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -43,4 +49,32 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() {
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		_, f, _, _ := runtime.Caller(0)
+		basepath := filepath.Dir(f)
+		configPath = filepath.Join(basepath, "../")
+	}
+
+	configName := os.Getenv("CONFIG_FILE")
+	if configName == "" {
+		configName = ".env"
+	}
+
+	viper.SetConfigName(configName)
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(configPath)
+
+	viper.AutomaticEnv() // read in environment variables that match
+
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err != nil {
+		log.Panic(err)
+	}
+
+	log.Println("Using config file:", viper.ConfigFileUsed())
 }

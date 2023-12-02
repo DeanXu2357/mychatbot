@@ -5,10 +5,14 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/DeanXu2357/mychatbot/handler/discord"
 )
@@ -38,15 +42,32 @@ func init() {
 func RunServer(cmd *cobra.Command, args []string) {
 	fmt.Println("RunServer called")
 
+	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+	defer cancel()
+
+	token := viper.GetString("discord.token")
+	discordHandler, errD := discord.New(token)
+	if errD != nil {
+		log.Panic(errD)
+	}
+	defer discordHandler.Close()
+	if err := discordHandler.Handle(); err != nil {
+		log.Panic(err)
+	}
+
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
-	r.GET("/discord/talk", discord.Talk)
+	//r.GET("/discord/talk", discordHandler.Interaction)
 
-	if err := r.Run(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := r.Run(); err != nil {
+			log.Panic(err)
+		}
+	}()
+
+	<-ctx.Done()
 }

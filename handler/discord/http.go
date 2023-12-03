@@ -1,26 +1,33 @@
 package discord
 
 import (
+	"context"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+
+	"github.com/DeanXu2357/mychatbot/llm"
 )
 
 type Handler struct {
 	session *discordgo.Session
+	ollama  *llm.Ollama
 }
 
-func New(dcToken string) (*Handler, error) {
+func New(dcToken string, ollama *llm.Ollama) (*Handler, error) {
 	ds, err := discordgo.New("Bot " + dcToken)
 	if err != nil {
 		return nil, err
 	}
 
-	ds.AddHandler(messageCreate)
-
-	return &Handler{
+	h := &Handler{
 		session: ds,
-	}, nil
+		ollama:  ollama,
+	}
+
+	ds.AddHandler(h.interaction(context.Background()))
+
+	return h, nil
 }
 
 func (h *Handler) Handle() error {
@@ -38,14 +45,33 @@ func (h *Handler) Close() error {
 	return h.session.Close()
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
+func (h *Handler) interaction(ctx context.Context) func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		// Ignore all messages created by the bot itself
+		if m.Author.ID == s.State.User.ID {
+			return
+		}
 
-	// If the message is "ping" reply with "Pong!"
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
+		// If the message is "ping" reply with "Pong!"
+		if m.Content == "ping" {
+			s.ChannelMessageSend(m.ChannelID, "Pong!")
+		}
+
+		if m.Content[:4] == "/llm" {
+			gctx, ok := ctx.Value("generateContext").([]int)
+			if !ok {
+				gctx = []int{}
+			}
+
+			resp, generateCTX, errG := h.ollama.Generate(ctx, gctx, m.Content[3:])
+			if errG != nil {
+				log.Print(errG)
+				s.ChannelMessageSend(m.ChannelID, "Someone tell poyu, there is a problem with my AI.")
+			}
+
+			ctx = context.WithValue(ctx, "generateContext", generateCTX)
+
+			s.ChannelMessageSend(m.ChannelID, resp)
+		}
 	}
 }

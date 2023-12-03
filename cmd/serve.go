@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/DeanXu2357/mychatbot/handler/discord"
+	"github.com/DeanXu2357/mychatbot/llm"
 )
 
 // serveCmd represents the serve command
@@ -45,8 +46,13 @@ func RunServer(cmd *cobra.Command, args []string) {
 	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 	defer cancel()
 
+	ollama, errO := llm.NewOllama(viper.GetString("ollama.url"), viper.GetString("ollama.system"))
+	if errO != nil {
+		log.Panic(errO)
+	}
+
 	token := viper.GetString("discord.token")
-	discordHandler, errD := discord.New(token)
+	discordHandler, errD := discord.New(token, ollama)
 	if errD != nil {
 		log.Panic(errD)
 	}

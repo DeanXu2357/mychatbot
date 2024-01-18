@@ -102,7 +102,7 @@ func (o *Ollama) Generate(ctx context.Context, generateContext []int, prompt str
 	return respString, generateCTX, nil
 }
 
-func NewOllama(baseURL string, system string) (*Ollama, error) {
+func NewOllama(baseURL string, model string, system string) (*Ollama, error) {
 	u, errU := url.Parse(baseURL)
 	if errU != nil {
 		return nil, fmt.Errorf("parse url failed: %w", errU)
@@ -110,7 +110,7 @@ func NewOllama(baseURL string, system string) (*Ollama, error) {
 
 	return &Ollama{
 		base:       u,
-		model:      "llama2:13b",
+		model:      model,
 		system:     system,
 		httpClient: &http.Client{},
 	}, nil

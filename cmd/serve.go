@@ -46,7 +46,11 @@ func RunServer(cmd *cobra.Command, args []string) {
 	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 	defer cancel()
 
-	ollama, errO := llm.NewOllama(viper.GetString("ollama.url"), viper.GetString("ollama.system"))
+	ollama, errO := llm.NewOllama(
+		viper.GetString("ollama.url"),
+		viper.GetString("ollama.model"),
+		viper.GetString("ollama.system"),
+	)
 	if errO != nil {
 		log.Panic(errO)
 	}

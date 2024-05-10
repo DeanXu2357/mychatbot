@@ -5,6 +5,7 @@ import "time"
 type Tag string
 
 type Event struct {
+	ID        int64
 	Name      string
 	UserID    string
 	Tags      []Tag
@@ -12,6 +13,7 @@ type Event struct {
 }
 
 type Record struct {
+	ID        int64
 	UserID    string
 	Reps      int
 	Weight    int

@@ -4,11 +4,13 @@ Copyright © 2023 poyu <dean.xu.2357@gmail.com>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
@@ -43,8 +45,7 @@ func init() {
 func RunServer(cmd *cobra.Command, args []string) {
 	fmt.Println("RunServer called")
 
-	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
-	defer cancel()
+	ctx := cmd.Context()
 
 	ollama, errO := llm.NewOllama(
 		viper.GetString("ollama.url"),
@@ -73,11 +74,24 @@ func RunServer(cmd *cobra.Command, args []string) {
 	})
 	//r.GET("/discord/talk", discordHandler.Interaction)
 
+	srv := &http.Server{
+		Addr:              fmt.Sprintf(":%s", viper.GetString("server.port")),
+		Handler:           r,
+		ReadHeaderTimeout: 60 * time.Second,
+	}
+
 	go func() {
-		if err := r.Run(); err != nil {
-			log.Panic(err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalln("listen:", err)
 		}
 	}()
 
-	<-ctx.Done()
+	notifyCTX, _ := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	<-notifyCTX.Done()
+
+	if err := srv.Shutdown(cmd.Context()); err != nil {
+		log.Panicln("server shutdown:", err)
+	}
+
+	fmt.Println("shutting down gracefully, press Ctrl+C again to force close")
 }

@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-type Logger interface {
-	Log(ctx context.Context, uid string, eventID string, rep int, weight int) error
+type RecordEditor interface {
+	Add(ctx context.Context, uid string, eventID int64, rep int, weight int) error
 	Records(ctx context.Context, uid string, opts ...QueryOption) ([]Record, error)
 	Delete(ctx context.Context, uid string, recordID string) error
 }
@@ -14,7 +14,7 @@ type Logger interface {
 type EventEditor interface {
 	Events(ctx context.Context, uid string) ([]Event, error)
 	Create(ctx context.Context, uid string, name string, tags []Tag) (Event, error)
-	Delete(ctx context.Context, eventID string) error
+	Delete(ctx context.Context, eventID int64) error
 }
 
 type QueryOption func(q *QueryFilter)

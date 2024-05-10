@@ -6,13 +6,12 @@ services:
       - 5433:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/postgresql/init:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: C@stl1s8418
-      POSTGRES_DB: qrswitch
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: chatbot
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U admin -d qrswitch " ]
+      test: [ "CMD-SHELL", "pg_isready -U admin -d chatbot " ]
       interval: 10s
       timeout: 5s
       retries: 5

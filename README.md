@@ -41,3 +41,14 @@
 - [ ] Robustness
   - [ ] command `server` 中，有任何服務失敗時觸發 ctx 的 cancel 事件，graceful shutdown server
   - [ ] 完善 log 機制
+
+---
+memo
+
+```shell
+migrate -source file://./database/postgresql/migration -database postgres://admin:123456@localhost:5433/chatbot?sslmode=disable up
+```
+
+```shell
+migrate create -dir ./database/postgresql/migration/ -ext sql create_workout_events_table
+```

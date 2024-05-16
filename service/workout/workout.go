@@ -13,7 +13,7 @@ type RecordEditor interface {
 
 type EventEditor interface {
 	Events(ctx context.Context, uid string) ([]Event, error)
-	Create(ctx context.Context, uid string, name string, tags []Tag) (Event, error)
+	Create(ctx context.Context, uid string, name string, tags []string) (Event, error)
 	Delete(ctx context.Context, eventID int64) error
 }
 

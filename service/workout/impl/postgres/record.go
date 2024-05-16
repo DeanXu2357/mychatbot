@@ -46,8 +46,46 @@ func (w *workoutRecord) Add(ctx context.Context, uid string, eventID int64, rep 
 }
 
 func (w *workoutRecord) Records(ctx context.Context, uid string, opts ...workout.QueryOption) ([]workout.Record, error) {
-	//TODO implement me
-	panic("implement me")
+	queryfilter := workout.QueryFilter{
+		Limit: 10,
+	}
+
+	for _, opt := range opts {
+		opt(&queryfilter)
+	}
+
+	tx := w.db.WithContext(ctx).
+		Table(TableRecord).
+		Where("user_id", uid)
+
+	if !queryfilter.AfterCreatedAt.IsZero() {
+		tx = tx.Where("created_at > ?", queryfilter.AfterCreatedAt)
+	}
+
+	if !queryfilter.BeforeCreatedAt.IsZero() {
+		tx = tx.Where("created_at < ?", queryfilter.BeforeCreatedAt)
+	}
+
+	var records []Record
+	if err := tx.Limit(queryfilter.Limit).Find(&records).Error; err != nil {
+		return nil, fmt.Errorf("failed to get records: %w", err)
+	}
+
+	var result []workout.Record
+	for _, r := range records {
+		result = append(result, workout.Record{
+			ID:        r.ID,
+			UserID:    r.UserID,
+			Reps:      r.Reps,
+			Weight:    r.Weight,
+			CreatedAt: r.CreatedAt,
+			Event: workout.Event{
+				ID: r.EventID,
+			},
+		})
+	}
+
+	return result, nil
 }
 
 func (w *workoutRecord) Delete(ctx context.Context, uid string, recordID string) error {

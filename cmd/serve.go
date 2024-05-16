@@ -15,9 +15,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/DeanXu2357/mychatbot/handler/discord"
 	"github.com/DeanXu2357/mychatbot/llm"
+	workourtDC "github.com/DeanXu2357/mychatbot/service/workout/handler/discord"
+	workoutImpl "github.com/DeanXu2357/mychatbot/service/workout/impl/postgres"
 )
 
 // serveCmd represents the serve command
@@ -47,6 +51,17 @@ func RunServer(cmd *cobra.Command, args []string) {
 
 	ctx := cmd.Context()
 
+	db, errDB := getPostgresDB()
+	if errDB != nil {
+		log.Panic(errDB)
+	}
+	db.Debug()
+
+	woh := workourtDC.Handler{
+		Record: workoutImpl.NewRecordEditor(db),
+		Event:  workoutImpl.NewEventEditor(db),
+	}
+
 	ollama, errO := llm.NewOllama(
 		viper.GetString("ollama.url"),
 		viper.GetString("ollama.model"),
@@ -62,6 +77,7 @@ func RunServer(cmd *cobra.Command, args []string) {
 		log.Panic(errD)
 	}
 	defer discordHandler.Close()
+	discordHandler.AddHandler(woh.HandleWorkoutRecord)
 	if err := discordHandler.Handle(); err != nil {
 		log.Panic(err)
 	}
@@ -94,4 +110,23 @@ func RunServer(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("shutting down gracefully, press Ctrl+C again to force close")
+}
+
+func getPostgresDB() (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		viper.GetString("postgres.host"),
+		viper.GetString("postgres.user"),
+		viper.GetString("postgres.password"),
+		viper.GetString("postgres.database"),
+		viper.GetString("postgres.port"),
+		viper.GetString("postgres.ssl_mode"),
+	)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("gorm open failed: %w", err)
+	}
+
+	return db, nil
 }

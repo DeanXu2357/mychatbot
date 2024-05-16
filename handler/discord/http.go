@@ -30,6 +30,10 @@ func New(dcToken string, ollama *llm.Ollama) (*Handler, error) {
 	return h, nil
 }
 
+func (h *Handler) AddHandler(handler any) {
+	h.session.AddHandler(handler)
+}
+
 func (h *Handler) Handle() error {
 	go func() {
 		if err := h.session.Open(); err != nil {
@@ -57,7 +61,7 @@ func (h *Handler) interaction(ctx context.Context) func(s *discordgo.Session, m 
 			s.ChannelMessageSend(m.ChannelID, "Pong!")
 		}
 
-		if m.Content[:4] == "/llm" {
+		if len(m.Content) > 4 && m.Content[:4] == "/llm" {
 			gctx, ok := ctx.Value("generateContext").([]int)
 			if !ok {
 				gctx = []int{}

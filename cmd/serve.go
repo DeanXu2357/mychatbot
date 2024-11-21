@@ -65,13 +65,14 @@ func RunServer(cmd *cobra.Command, args []string) {
 		log.Panic(err)
 	}
 
+	discordHandler.MonitorTailscaleService(ctx, "sony-j9110")
+
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
-	//r.GET("/discord/talk", discordHandler.Interaction)
 
 	go func() {
 		if err := r.Run(); err != nil {

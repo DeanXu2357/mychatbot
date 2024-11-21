@@ -2,11 +2,14 @@ package discord
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/DeanXu2357/mychatbot/llm"
+	"github.com/DeanXu2357/mychatbot/service/probe"
 )
 
 type Handler struct {
@@ -74,4 +77,28 @@ func (h *Handler) interaction(ctx context.Context) func(s *discordgo.Session, m 
 			s.ChannelMessageSend(m.ChannelID, resp)
 		}
 	}
+}
+
+func (h *Handler) MonitorTailscaleService(ctx context.Context, name string) {
+	notifier := probe.NewTailscaleNotifier(name) //"sony-xq-dq72")
+	okCh := notifier.OK()
+	notOkCh := notifier.NotOK()
+	ok := true
+
+	go func() {
+		for {
+			select {
+			case <-okCh:
+				if !ok {
+					h.session.ChannelMessageSend("1309066554201079809", fmt.Sprintf("TailScale(%s) is OK at %s", "sony-xq-dq72", time.Now().Local().String()))
+					ok = true
+				}
+			case <-notOkCh:
+				h.session.ChannelMessageSend("1309066554201079809", fmt.Sprintf("TailScale(%s) is not OK at %s", "sony-xq-dq72", time.Now().Local().String()))
+				ok = false
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }

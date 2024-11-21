@@ -1,0 +1,17 @@
+[Unit]
+Description=MyChatbot Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+ExecStart=/home/dean/workspace/mine/mychatbot/main serve
+WorkingDirectory=/home/dean/workspace/mine/mychatbot
+Restart=always
+RestartSec=10
+
+# 設定環境變數（如果需要的話）
+# Environment=KEY=value
+
+[Install]
+WantedBy=multi-user.target

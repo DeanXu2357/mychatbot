@@ -60,11 +60,13 @@ func (t *TailscaleNotifier) ping() bool {
 			return false, nil
 		}
 
+		var ok bool
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
 			line := scanner.Text()
 			if strings.Contains(line, "pong") {
-				return true, nil
+				ok = true
+				break
 			}
 		}
 
@@ -72,7 +74,7 @@ func (t *TailscaleNotifier) ping() bool {
 			return false, nil
 		}
 
-		return false, nil
+		return ok, nil
 	})
 
 	if err != nil {

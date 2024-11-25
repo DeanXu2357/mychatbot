@@ -90,11 +90,11 @@ func (h *Handler) MonitorTailscaleService(ctx context.Context, name string) {
 			select {
 			case <-okCh:
 				if !ok {
-					h.session.ChannelMessageSend("1309066554201079809", fmt.Sprintf("TailScale(%s) is OK at %s", "sony-xq-dq72", time.Now().Local().String()))
+					h.session.ChannelMessageSend("1309066554201079809", fmt.Sprintf("TailScale(%s) is OK at %s", name, time.Now().Local().String()))
 					ok = true
 				}
 			case <-notOkCh:
-				h.session.ChannelMessageSend("1309066554201079809", fmt.Sprintf("TailScale(%s) is not OK at %s", "sony-xq-dq72", time.Now().Local().String()))
+				h.session.ChannelMessageSend("1309066554201079809", fmt.Sprintf("TailScale(%s) is not OK at %s", name, time.Now().Local().String()))
 				ok = false
 			case <-ctx.Done():
 				return

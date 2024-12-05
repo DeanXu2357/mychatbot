@@ -75,10 +75,12 @@ func RunServer(cmd *cobra.Command, args []string) {
 	})
 
 	go func() {
-		if err := r.Run(); err != nil {
+		if err := r.Run(":" + viper.GetString("server.port")); err != nil {
 			log.Panic(err)
 		}
 	}()
 
 	<-ctx.Done()
+
+	discordHandler.Shutdown()
 }

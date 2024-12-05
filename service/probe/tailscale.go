@@ -3,6 +3,7 @@ package probe
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
@@ -23,7 +24,8 @@ func (t *TailscaleNotifier) NotOK() <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
 		for {
-			if !t.ping() {
+			ping := t.ping()
+			if !ping {
 				ch <- struct{}{}
 			}
 			time.Sleep(1 * time.Second)
@@ -71,7 +73,12 @@ func (t *TailscaleNotifier) ping() bool {
 		}
 
 		if err := cmd.Wait(); err != nil {
-			return false, nil
+			if _, isSignalKilled := err.(*exec.ExitError); isSignalKilled {
+				return ok, nil
+			}
+
+			fmt.Println("err:", err)
+			return ok, err
 		}
 
 		return ok, nil

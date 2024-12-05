@@ -30,6 +30,8 @@ func New(dcToken string, ollama *llm.Ollama) (*Handler, error) {
 
 	ds.AddHandler(h.interaction(context.Background()))
 
+	ds.ChannelMessageSend("1309066554201079809", "Hello, here is your chatbot")
+
 	return h, nil
 }
 
@@ -60,7 +62,7 @@ func (h *Handler) interaction(ctx context.Context) func(s *discordgo.Session, m 
 			s.ChannelMessageSend(m.ChannelID, "Pong!")
 		}
 
-		if m.Content[:4] == "/llm" {
+		if len(m.Content) > 4 && m.Content[:4] == "/llm" {
 			gctx, ok := ctx.Value("generateContext").([]int)
 			if !ok {
 				gctx = []int{}
@@ -101,4 +103,8 @@ func (h *Handler) MonitorTailscaleService(ctx context.Context, name string) {
 			}
 		}
 	}()
+}
+
+func (h *Handler) Shutdown() {
+	h.session.ChannelMessageSend("1309066554201079809", "Bye bye ~")
 }
